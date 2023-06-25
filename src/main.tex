@@ -25,9 +25,13 @@
         \subsection{OR-Mapping Varianten}
         \begin{enumerate}
             \item Forward Engineering (Code first, Top-Down)
+            \subitem Business-Modell erstellen, erzeuge DB-Schema
             \item Bottom Up (DB first, \enquote{Reverse Engineering})
+            \subitem DB-Schema existiert, erzeuge Business-Modell
             \item Inside-Out (Mapping first)
+            \subitem Erstelle Metadaten, generiere Java und DB-Schema
             \item Meet-in-the-middle (Outside-in)
+            \subitem Business-Modell und DB-Schema existieren, erstelle Metadaten
             \item Meta Model (Model-driven)
         \end{enumerate}
 
@@ -61,39 +65,33 @@
                         @Id
                         @Column(name = "accountId")
                         private long id;
-
                         private double balance;
-
                         @Column(name = "salary", scale=10, precision=2)
                         private BigDecimal salary;
-
                         @Column(name = "description", length=500)
                         private String explanation;
-
                         @Temporal(TemporalType.TIMESTAMP)
                         private Calendar creationDate;
-
                         @Column(name = "s_time", columnDefinition="TIMESTAMPZ")
                         private Calendar startDate;
-
                         @Enumerated(EnumType.STRING)
                         private Currency curr;
-
                         @Column(name = "ssn", unique=true, nullable=true)
                         private long ssn;
-
                         @Transient
                         private String tempComments;
-
                         // getter und setter
                     }
         \end{lstlisting}
 
-        Access Type von Annotations:
+        Access Type von Annotations: \\
         \begin{tabularx}{\columnwidth}{X | X}
             Field Access & Property Access \\
+            \hline
             DB-Attr direkt in Fields abbilden (Spring default) & DB-Attr über Getter/Setter \\
+            \hline
             Nach Field-Annotation folgt Java-Feld & Nach Field-Annotation folgt Methode \\
+            \hline
             Von Spring bevorzugt &
         \end{tabularx}
 
@@ -268,16 +266,70 @@
 
         \subsection{Kardinalitäten}
         \subsubsection{OneToOne (1:1)}
-        Insert image
+        \includegraphics[width=\columnwidth]{graphic/02-one-to-one}
+        Bidirectional\\
+        \includegraphics[width=\columnwidth]{graphic/03-bidirectional-one-to-one}
+        Inverse\\
+        \includegraphics[width=\columnwidth]{graphic/04-inverse-one-to-one}
 
         \subsubsection{ManyToOne (Many:1)}
-        Insert image
+        \includegraphics[width=\columnwidth]{graphic/05-many-to-one}
+        Bidirectional\\
+        \includegraphics[width=\columnwidth]{graphic/06-bidirectional-many-to-one}
 
         \subsubsection{OneToMany (1:Many)}
+        \includegraphics[width=\columnwidth]{graphic/07-one-to-many}
+
         \subsubsection{ManyToMany (Many:Many)}
+        \includegraphics[width=\columnwidth]{graphic/08-many-to-many}
+        Bidirectional\\
+        \includegraphics[width=\columnwidth]{graphic/09-bidirectional-many-to-many}
+        
+        Ladestrategien \\
+        \begin{itemize}
+            \item \texttt{@OneToOne(fetch = FetchType.LAZY)}
+            \subitem Default bei \texttt{@OneToMany} und \texttt{@ManyToMany}
+            \item \texttt{@OneToMany(fetch = FetchType.EAGER)}
+            \subitem Default bei \texttt{@OneToOne} und \texttt{@ManyToOne}
+        \end{itemize}
 
+        \subsection{Kaskadieren}
+        \begin{lstlisting}[language=java]
+                    // Cascade.Persist
+                    @OneToMany(cascade = CascadeType.PERSIST, ...)
+                    // CascadeType.Remove
+                    @OneToMany(cascade = CascadeType.REMOVE)
+                    private Collection<BankAccount> accounts = new ArrayList<>();
+        \end{lstlisting}
+        \includegraphics[width=0.9\columnwidth]{graphic/10-relations-with-dependencies}
 
-        \subsubsection{Bidirectional Sync}
+        \subsection{Bidirectional Sync}
+        Bidirektionale Relationen sind bei Änderungen durch JPA nicht synchronisiert.
+        \begin{lstlisting}[language=java]
+                    public class BankAccount {
+                        ...
+                        public void setCustomer(BankCustomer newCustomer) {
+                            BankCustomer oldCustomer = this.customer;
+                            this.customer = newCustomer;
+                            if (newCustomer != null && !newCustomer.containsAccount(this)) {
+                                newCustomer.addAccount(this);
+                            }
+                            if (oldCustomer != null && oldCustomer.containsAccount(this)) {
+                                oldCustomer.removeAccount(this);
+                            }
+                        }
+                    }
+                    ...
+                    public class BankCustomer {
+                        ...
+                        public void addAccount(BankAccount account) {
+                            this.accounts.add(account);
+                            if (account.getCustomer() != this) {
+                                account.setCustomer(this);
+                            }
+                        }
+                    }
+        \end{lstlisting}
 
         \subsection{Vererbung: Abbildungsstrategien}
         \begin{tabularx}{\columnwidth}{l | X}
@@ -402,12 +454,19 @@
         \subsection{Trigger-Funktions-Variablen}
         \begin{tabularx}{\columnwidth}{l | X}
             \textbf{TG\_NAME} & Name von Trigger \\
+            \hline
             \textbf{TG\_WHEN} & BEFORE / AFTER \\
+            \hline
             \textbf{TG\_LEVEL} & ROW / STATEMENT \\
+            \hline
             \textbf{TG\_OP} & INSERT, UPDATE, DELETE, TRUNCATE \\
+            \hline
             \textbf{TG\_RELID} & ROW ID der Tabelle \\
+            \hline
             \textbf{TG\_RELNAME} & Name der Tabelle \\
+            \hline
             \textbf{TG\_TABLE\_SCHEMA} & Schema der Tabelle \\
+            \hline
             \textbf{NEW, OLD} & neue / alte Records
         \end{tabularx}
 
@@ -532,12 +591,19 @@
             \textbf{Datentyp ADT} & \textbf{Beispiel} \\
             \hline
             Name & \texttt{easteregg} \\
+            \hline
             Innere Datenstruktur & \texttt{outer: text, inner: text;} \\
+            \hline
             Konstruktor & \texttt{easteregg\_from\_text('x', 'yy')} \\
+            \hline
             Accessor-Funktion & \texttt{easteregg\_inner()} \\
+            \hline
             Update-Funktion & \texttt{easteregg\_append('zz')} \\
+            \hline
             Hilfs-Funktion & \texttt{easteregg\_astext(myegg)} \\
+            \hline
             Operator & \texttt{WHERE myegg = youregg} \\
+            \hline
             Index auf Attribut \texttt{eggs} & \texttt{CREATE INDEX myindex ON mytable USING GIN(eggs);}
         \end{tabularx}
 
@@ -596,7 +662,7 @@
         \end{lstlisting}
 
         \begin{lstlisting}[language=sql]
-            SELECT ARRAY[1.1, 2.1, 3.1]::int[] = ARRAY[1, 2, 3]; -- ergibt "t" für true
+            SELECT ARRAY[1.1, 2.1, 3.1]::int[] = ARRAY[1, 2, 3]; -- "t" fuer true
         \end{lstlisting}
 
         \subsection{Dictionaries}
@@ -614,6 +680,58 @@
 
         \subsubsection{XML}
 
+
+        \section{Graph Stores {\tiny mit Neo4J}}
+        \includegraphics[width=0.5\columnwidth]{graphic/12-example-graph-store}
+
+        \subsection{Graph Daten erzeugen}
+        \begin{lstlisting}
+                    CREATE (alice:User {username: 'Alice'}),
+                           (bob:User {username: 'Bob'}),
+                           (charlie:User {username: 'Charlie'}),
+                           (alice)-[:ALIAS_OF]->(bob)
+
+                    MATCH (bob:User {username:'Bob'}),
+                          (charlie:User {username:'Charlie'}),
+                          (davina:User {username:'Davina'}),
+                          (edward:User {username:'Edward'})
+                    CREATE (bob)-[:EMAILED]->(charlie),
+                           (bob)-[:CC]->(davina),
+                           (bob)-[:BCC]->(edward)
+        \end{lstlisting}
+
+        \subsection{Cypher Query Syntax}
+        TODO: Einfügen aus Neo4J Cheat sheet
+
+        \subsubsection{Example}
+        \includegraphics[width=\columnwidth]{graphic/13-example-cypher-query}
+        
+        \section{Column Family Stores {\tiny with Cassandra}}
+        TODO: check if required
+
+        \section{Column Stores}
+        \begin{itemize}
+            \item Massive DBs \enquote{read-mostly, read-intensive} (OLAP), DWH mit Sternschema
+            \item Queries sind je nachdem schneller, Faktor 50 - 100, va. Aggregations-Fn. und Group By
+        \end{itemize}
+        \begin{tabularx}{\columnwidth}{X | X}
+            \textbf{OLTP} & \textbf{OLAP} \\
+            \textit{Online Transaction Processing} & \textit{Online Analytical Processing} \\
+            \textit{Datenverwaltungs-optimiertes System} & \textit{Lese-Optimiertes System} \\
+            \hline
+            Low volume of data & High volume of data \\
+            \hline
+            High volume of transactions & Low volume of transactions \\
+            \hline
+            Typically normalized data & Typically denormalized data \\
+            \hline
+            ACID compliance & Not necessarily ACID-compliant \\
+            \hline
+            Require high availability & Doesn't usually require high availability
+        \end{tabularx}
+
+        \section{DuckDB - In-Process Analytical Column Store}
+        TODO
 
         \section{Database-as-a-service (DBAAS)}
         TODO
@@ -638,11 +756,25 @@
         \end{itemize}
 
         \subsection{CQRS {\tiny Command-Query Responsibility Segregation}}
-        TODO
+        \begin{itemize}
+            \item Geeignet für: Real-time analytics, viele Schreibprozesse (>1:100), verteilte Systeme, No-Schema-Approach
+            \item Trennt Domänenmodell in Read-Modell und Write-Modell (bzw. Query und Command)
+            \item Schreiben und Abfragen wird separat behandelt, Optimierung beider Befehle
+            \item Probleme
+            \subitem Unnötige Komplexität
+            \subitem Aufwändige Koordination
+            \subitem Star Schema und Snowflake Schema könnte man als CQRS bezeichnen
+        \end{itemize}
+        \includegraphics[width=0.7\columnwidth]{graphic/11-cqrs-modell}
 
         \subsection{Event Sourcing}
         \enquote{Turning the database inside-out}
-        TODO
+        \begin{itemize}
+            \item Reihe von Änderungen (Events) im Zustand einer Anwendung
+            \item Events sind unveränderlich (\enquote{append-only})
+            \item Events werden als Stornotransaktionen eingefügt, nicht gelöscht
+            \item Event Sourcing unabhängig von CQRS, aber oft in Kombination
+        \end{itemize}
 
         \subsection{Evolutionary Database Design}
         TODO
