@@ -84,17 +84,6 @@
                     }
         \end{lstlisting}
 
-        Access Type von Annotations: \\
-        \begin{tabularx}{\columnwidth}{X | X}
-            Field Access & Property Access \\
-            \hline
-            DB-Attr direkt in Fields abbilden (Spring default) & DB-Attr über Getter/Setter \\
-            \hline
-            Nach Field-Annotation folgt Java-Feld & Nach Field-Annotation folgt Methode \\
-            \hline
-            Von Spring bevorzugt &
-        \end{tabularx}
-
         \subsection{Laden/Suchen von Entities}
         \begin{lstlisting}[language=java]
                     EntityManagerFactory factory = Persistence.createEntityManagerFactory("Bank");
@@ -139,34 +128,18 @@
             \item Entity Annotationen
             \item Default Mapping (in JPA-Implementation)
         \end{enumerate}
-        Beispiel:
-        \begin{lstlisting}[language=xml]
-                    <?xml version="1.0" encoding="UTF-8"?>
-                    <entity-mappings version="1.0"
-                      xmlns="http://java.sun.com/xml/ns/persistence/orm"
-                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                      xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm/orm_1_0.xsd">
-                      <entity name="bankaccount" class="ch.hsr.dbs1.BankAccount" access="FIELD">
-                       <table name="account"/>
-                       <attributes>
-                        <id name="id">
-                            <column name="accountid"/>
-                        </id>
-                       </attributes>
-                      </entity>
-                    </entity-mappings>
-        \end{lstlisting}
 
         \subsection{JPA Lifecycle}
-        \includegraphics[scale=0.15]{graphic/00-entity-lifecycle}
+        \includegraphics[scale=0.12]{graphic/00-entity-lifecycle}
 
         \subsection{JPA Architektur}
-        \includegraphics[scale=0.15]{graphic/01-jpa-architecture}
+        \includegraphics[scale=0.12]{graphic/01-jpa-architecture}
 
         \subsection{Entity States}
         Entitätsinstanzen befinden sich in einem von 4 Zuständen: \\
         \begin{tabularx}{\columnwidth}{l | X}
-            New & keine persistente Identität, sind noch nicht mit Persistenzkontext verbunden\\
+            \hline
+            New & keine persistente Identität, noch nicht mit Persistenzkontext verbunden\\
             \hline
             Managed & Entitätsinstanzen haben persistente Identität und sind mit Kontext verknüpft\\
             \hline
@@ -176,14 +149,24 @@
         \end{tabularx}
 
         \subsection{JPA Transaktionen}
+        \begin{lstlisting}[language=java]
+                    // Explizite Transaktion
+                    EntityManager em = factory.createEntityManager();
+                    em.getTransaction().begin();
+                    // do stuff
+                    em.getTransaction().commit(); // or rollback();
+        \end{lstlisting}
 
         \subsubsection{Transaction Isolation}
+        JPA basiert auf READ COMMITED isolation level.
+        JPA Provider EclipseLink führt Reads nicht über gleiche Connection wie Write aus.
 
-        \subsubsection{Optimistic Concurrency}
-
-        \subsection{Lock Modes}
-        \subsubsection{OPTIMISTIC}
-        \subsubsection{OPTIMISTIC\_FORCE\_INCREMENT}
+        \begin{lstlisting}[language=java]
+                    // Explizites Locking
+                    BankAccount account = em.find(...);
+                    em.lock(account, LockModeType.PESSIMISTIC_WRITE);
+                    account.incBalance(100);
+        \end{lstlisting}
 
         \subsection{Object Identity}
         \begin{itemize}
@@ -196,8 +179,7 @@
 
         \subsubsection{Entity-Identität}
         \begin{itemize}
-            \item Annotation @Id
-            \item Generierung der Identity mit @GeneratedValue
+            \item Annotation @Id, Generierung der Identity mit @GeneratedValue
             \item Verschiedene Strategien
             \subitem AUTO: von JPA Provider gewählt (meist SEQUENCE, IDENTITY)
             \subitem IDENTITY: basiert auf \enquote{auto-increment} (GENERATED AS...) Wert der DB
@@ -264,28 +246,27 @@
             \item Nur nach Laden konsistent
         \end{itemize}
 
-        \subsection{Kardinalitäten}
-        \subsubsection{OneToOne (1:1)}
-        \includegraphics[width=\columnwidth]{graphic/02-one-to-one}
-        Bidirectional\\
-        \includegraphics[width=\columnwidth]{graphic/03-bidirectional-one-to-one}
-        Inverse\\
-        \includegraphics[width=\columnwidth]{graphic/04-inverse-one-to-one}
+        \subsection{OneToOne (1:1)}
+        \includegraphics[scale=0.25]{graphic/02-one-to-one}
+        \subsubsection{Bidirectional}
+        \includegraphics[scale=0.25]{graphic/03-bidirectional-one-to-one}
+        \subsubsection{Inverse}
+        \includegraphics[scale=0.25]{graphic/04-inverse-one-to-one}
 
-        \subsubsection{ManyToOne (Many:1)}
-        \includegraphics[width=\columnwidth]{graphic/05-many-to-one}
-        Bidirectional\\
-        \includegraphics[width=\columnwidth]{graphic/06-bidirectional-many-to-one}
+        \subsection{ManyToOne (Many:1)}
+        \includegraphics[scale=0.25]{graphic/05-many-to-one}
+        \subsubsection{Bidirectional}
+        \includegraphics[scale=0.25]{graphic/06-bidirectional-many-to-one}
 
-        \subsubsection{OneToMany (1:Many)}
-        \includegraphics[width=\columnwidth]{graphic/07-one-to-many}
+        \subsection{OneToMany (1:Many)}
+        \includegraphics[scale=0.25]{graphic/07-one-to-many}
 
-        \subsubsection{ManyToMany (Many:Many)}
-        \includegraphics[width=\columnwidth]{graphic/08-many-to-many}
-        Bidirectional\\
-        \includegraphics[width=\columnwidth]{graphic/09-bidirectional-many-to-many}
+        \subsection{ManyToMany (Many:Many)}
+        \includegraphics[scale=0.25]{graphic/08-many-to-many}
+        \subsubsection{Bidirectional}
+        \includegraphics[scale=0.25]{graphic/09-bidirectional-many-to-many}
         
-        Ladestrategien \\
+        \subsection{Ladestrategien}
         \begin{itemize}
             \item \texttt{@OneToOne(fetch = FetchType.LAZY)}
             \subitem Default bei \texttt{@OneToMany} und \texttt{@ManyToMany}
@@ -301,7 +282,7 @@
                     @OneToMany(cascade = CascadeType.REMOVE)
                     private Collection<BankAccount> accounts = new ArrayList<>();
         \end{lstlisting}
-        \includegraphics[width=0.9\columnwidth]{graphic/10-relations-with-dependencies}
+        \includegraphics[scale=0.24]{graphic/10-relations-with-dependencies}
 
         \subsection{Bidirectional Sync}
         Bidirektionale Relationen sind bei Änderungen durch JPA nicht synchronisiert.
@@ -343,10 +324,72 @@
         \end{tabularx}
 
         \subsubsection{Single Table}
+        \begin{lstlisting}[language=java]
+                    @Entity
+                    @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+                    @DiscriminatorColumn(name = "type")
+                    public abstract class BankCustomer {
+                        @Id private String name;
+                    }
+                    ...
+                    @Entity
+                    @DiscriminatorValue("Retail")
+                    public class RetailBankCustomer extends BankCustomer {
+                        private int fees;
+                    }
+                    ...
+                    @Entity
+                    @DiscriminatorValue("Private")
+                    public class PrivateBankCustomer extends BankCustomer {
+                        private String eliteOffer;x
+                    }
+        \end{lstlisting}
 
         \subsubsection{Joined Table}
+        Eine Tabelle \texttt{bankcustomer}.
+        Zwei Tabellen \texttt{retailbankcustomer} und \texttt{privatebankcustomer} mit FK auf \texttt{bankcustomer}.
+        \begin{lstlisting}[language=java]
+                    @Entity
+                    @Inheritance(strategy = InheritanceType.JOINED)
+                    @DiscriminatorColumn(name = "type")
+                    public abstract class BankCustomer {
+                        @Id private int customerId;
+                        private String name;
+                    }
+                    ...
+                    @Entity
+                    @DiscriminatorValue("Retail")
+                    public class RetailBankCustomer extends BankCustomer {
+                        private int fees;
+                    }
+                    ...
+                    @Entity
+                    @DiscriminatorValue("Private")
+                    public class PrivateBankCustomer extends BankCustomer {
+                        private String eliteOffer;
+                    }
+        \end{lstlisting}
+        
         \subsubsection{Table per Class}
-        \subsubsection{Mapped Superclass}
+        \begin{lstlisting}[language=java]
+                    @Entity
+                    @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+                    public abstract class BankCustomer {
+                        @Id
+                        private int customerId;
+                        private String name;
+                    }
+                    ...
+                    @Entity
+                    public class RetailBankCustomer extends BankCustomer {
+                        private int fees;
+                    }
+                    ...
+                    @Entity
+                    public class PrivateBankCustomer extends BankCustomer {
+                        private String eliteOffer;
+                    }
+        \end{lstlisting}
 
         \section{JPQL \tiny{Java Persistence Query Language}}
         \subsection{Query Parameters}
@@ -385,30 +428,44 @@
                     as $$
                       -- ... Source Code gemaess "language"
                     $$;
-
                     drop function name(argtype [,...]);
         \end{lstlisting}
 
         \section{PL/pgSQL \tiny{Prozedurale Sprache von PostgreSQL}}
-        Hello World: \\
+        Hello World / Dynamisches SQL: \\
         \begin{lstlisting}[language=sql]
                     -- Hello World
-                    create or replace function helloworld()
-                    returns void language plpgsql as $$
+                    create or replace
+                    -- function helloworld()
+                    -- returns void
+                    -- besser new style pl/sql-kompatibel
+                    procedure helloworld()
+                    language plpgsql as $$
+                    declare
+                        result int;
                     begin
                        raise notice 'Hello World!';
+                       -- dynamisches sql
+                       execute 'SELECT 1' into result;
                     end;
                     $$;
-
                     -- Test and use the function/procedure:
                     select helloworld();
         \end{lstlisting}
 
-        PL/pgSQL mit Paramter: \\
+        PL/pgSQL mit Parameter: \\
         \begin{lstlisting}[language=sql]
                     create or replace function
                       pow_mod(bigx bigint, n bigint, m bigint)
-                    returns bigint as $$
+                    returns bigint
+                    /*
+                        -- tabelle zurueckgeben
+                        RETURNS TABLE (
+                            abtname VARCHAR,
+                            abtMA VARCHAR
+                        )
+                    */
+                    as $$
                     declare
                       x bigint;
                       xx bigint;
@@ -425,6 +482,28 @@
                     $$ language plpgsql;
         \end{lstlisting}
 
+        Set Returning Functions \\
+        \begin{lstlisting}[language=sql]
+                    CREATE OR REPLACE FUNCTION getAllFoo() RETURNS SETOF foo AS $$
+                        DECLARE
+                              r foo%rowtype;  -- Tabelle foo
+                        BEGIN
+                            FOR r IN SELECT * FROM foo WHERE fooid > 0
+                            LOOP
+                                -- do something...
+                                RETURN NEXT r; -- return current row of SELECT
+                            END LOOP;
+                            RETURN; -- generic return
+                        END
+                    $$ LANGUAGE 'plpgsql';
+        \end{lstlisting}
+
+        SPs ausführen:
+        \begin{itemize}
+            \item \texttt{perform <<...>>};
+            \item \texttt{do \$\$<<Anonymous code block>>\$\$;}
+        \end{itemize}
+
         \subsection{SP Compiler}
         \begin{enumerate}
             \item Code wird beim Aufruf geparsed
@@ -433,7 +512,38 @@
             \item SQLStatements werden vorkompiliert (wie JDBC PreparedStatement) und bei wiederholtem Aufruf wiederverwendet.
             \item Code läuft im Server ab
             \item Kommunikation mit Frontend über Rückgabewerte (SP ungeeignet für GUI)
-        \end{enumerate}s
+        \end{enumerate}
+
+        \subsection{Cursor}
+        \includegraphics[width=\columnwidth]{graphic/15-cursor-process}
+
+        \begin{lstlisting}[language=sql]
+                    CREATE OR REPLACE
+                    FUNCTION BerechneSalSumme (ChefPersNr Angestellter.PersNr%TYPE)
+                    RETURNS DECIMAL AS $$
+                        DECLARE
+                           AngCursor refcursor; -- cursor variable unbound
+                           SalSumme DECIMAL (10, 2) := 0;
+                           AngRec RECORD;
+                        BEGIN
+                        OPEN AngCursor FOR SELECT Ang.PersNr,Ang.Name,Ang.Salaer
+                                             FROM Angestellter Ang
+                                             WHERE Ang.Chef = ChefPersNr;
+                          LOOP /*Iteration ueber Resultatmenge*/
+                            FETCH AngCursor INTO AngRec;
+                            EXIT WHEN NOT FOUND;
+                            SalSumme := SalSumme + AngRec.Salaer;
+                            SalSumme := SalSumme + BerechneSalSumme (AngRec.PersNr); //Rekursion
+                          END LOOP;
+                          CLOSE AngCursor;
+                          RETURN SalSumme;
+                        END;
+                    $$ language plpgsql;
+                    select BerechneSalSumme(1001);
+        \end{lstlisting}
+
+        \subsubsection{Cursor for Update}
+
 
         \section{Triggers}
         \begin{itemize}
@@ -450,6 +560,28 @@
         \end{itemize}
 
         \subsection{Syntax}
+        \begin{lstlisting}[language=sql]
+                    DECLARE
+                        -- optional
+                    BEGIN
+                        -- executable part
+                    EXCEPTION
+                        -- optional
+                        /* Multi line comments */
+                    END;
+
+                    -- Jedes objekt kann auch DESCRIPTION haben:
+                    COMMENT ON FUNCTION increment(int) is 'Increment 1';
+        \end{lstlisting}
+
+        \subsection{Spezielle Deklarationen}
+        \begin{lstlisting}[language=sql]
+                    DECLARE
+                        var5 angestellter.id%TYPE; --int
+                        var6 angestellter%ROWTYPE;
+                        var7 RECORD;
+                    ...
+        \end{lstlisting}
 
         \subsection{Trigger-Funktions-Variablen}
         \begin{tabularx}{\columnwidth}{l | X}
@@ -513,7 +645,7 @@
         \begin{lstlisting}[language=sql]
                     CREATE VIEW myview AS SELECT ...
         \end{lstlisting}
-        Updatable Views erstellen mit:
+        \textbf{Updatable Views erstellen mit:}
         \begin{itemize}
             \item Stored Procedures
             \item Updatable Views - automatisch aktualisierbare Views
@@ -522,7 +654,7 @@
             \item Instead of-Triggers
         \end{itemize}
 
-        Views sind automatisch aktualisierbar wenn:
+        \textbf{Views sind automatisch aktualisierbar wenn:}
         \begin{itemize}
             \item Genau einen Eintrag in der FROM-Klausel (andere Tabelle oder andere updatable View)
             \item Keine WITH, DISTINCT, GROUP BY, HAVING, LIMIT, OFFSET
@@ -733,11 +865,210 @@
         \section{DuckDB - In-Process Analytical Column Store}
         TODO
 
-        \section{Database-as-a-service (DBAAS)}
-        TODO
+        \section{Database-as-a-service (DbaaS)}
+        Cloud-basierter Ansatz zur Speicherung und Verwaltung von strukturierten Daten.
+        Cloud-DB-Dienste $\to$ als DbaaS zu klassifizieren
+
+        \includegraphics[scale=0.3]{graphic/14-dbaas-setup}
 
         \section{GraphQL}
-        REST Alternative
+        \begin{itemize}
+            \item DB-API und REST Alternative
+            \item Schema-basiert mit Typen
+            \item Wickelt alle Anfragen über einzigen Endpoint ab
+        \end{itemize}
+
+        \subsection{Best Practices}
+        \begin{enumerate}
+            \item Nullable fields: Make fields non-nullable
+            \item Miscommunication in the docs: GraphQL DocStrings (ähnlich Python)
+            \item Lengthy arguments to mutations: Fasse zusammengehörige Attribute zu Type zusammen
+            \item Insufficient mutation response
+        \end{enumerate}
+
+        \subsection{Schema Definition Language (SDL)}
+        SDL ist DDL für GraphQL.
+        \enquote{Scalar Types} sind Datentypen: Int (32-bit), Float (signed double-precision), String (UTF-8), Boolean.
+        Weitere Typen sind: Enum, List, Union, Interface.
+
+        \subsection{Postgraphile}
+        \subsubsection{Schema / Types}
+        Mit Tabelle \enquote{angestellter} macht Postgraphile folgendes (\enquote{by schema introspection/reflection}).
+        \begin{tabularx}{\columnwidth}{X | X}
+            \hline
+            Types & \tabitem Type \enquote{Angestellter}, UpperCamelCase und singularized \\
+            & \tabitem benennt Felder um in camelCase ohne \enquote{\_} \\
+            & \tabitem ergänzt \texttt{nodeId} als Globally Unique Identifier falls PK existiert \\
+            & \tabitem ergänzt Felder für jede Fremdschlüssel-Beziehung, z.B. \texttt{abteilungByAbtnr} \\
+            \hline
+            als Root \enquote{Query Types} & \tabitem Connection \enquote{allAngestellters} inkl. pagination, condition und order \\
+            & \tabitem Felder für jeden Unique Constraint der Tabelle z.B. \texttt{angestellterByPersnr} \\
+            \hline
+            als Root \enquote{Mutation Types} & \tabitem \texttt{createAngestellter} \\
+            & \tabitem \texttt{updateAngestellter} \\
+            & \tabitem \texttt{deleteAngestellter}
+        \end{tabularx}
+
+        \subsubsection{Postgraphile Queries $\leftrightarrow$ SQL}
+        \begin{lstlisting}
+                    # PostGraphiQL
+                    {
+                        allAngestelltersList(first: 5, offset: 0) {
+                            name
+                            persnr
+                            abtnr
+                        }
+                    }
+                    # SQL
+                    select name, persnr, abtnr from angestellter;
+
+                    # -------------------------
+                    # PostGraphiQL
+                    query {
+                        allAbteilungs {
+                            edges {
+                                node {
+                                    abtnr
+                                    name
+                                }
+                            }
+                        }
+                    }
+                    # Returns
+                    {
+                        "data": {
+                            "allAbteilungs": {
+                                "edges": [
+                                    {
+                                        "node": {
+                                            "abtnr": 1,
+                                            "name": "Verkauf"
+                                        }
+                                    }, ...
+                                ]
+                            }
+                        }
+                    }
+                    # SQL
+                    select abtnr, name from abteilung;
+
+                    # -------------------------
+                    # PostGraphiQL
+                    {
+                        abteilungByAbtnr(abtnr: 1) {
+                            abtnr
+                            name
+                        }
+                    }
+                    # Returns
+                    {
+                        "data": {
+                            "abteilungByAbtnr": {
+                                "abtnr": 1,
+                                "name": "Verkauf"
+                            }
+                        }
+                    }
+                    # SQL
+                    select abtnr, name from abteilung where abtnr = 1;
+        \end{lstlisting}
+
+        \subsubsection{Postgraphile Queries}
+        \begin{lstlisting}
+                    # query kann weggelassen werden:
+                    query {
+                        allAngestelltersList(first: 5, offset: 0) {
+                            name
+                            persnr
+                            abtnr
+                            chef
+                        }
+                    }
+                    # gibt folgendes zurueck
+                    {
+                        "data": {
+                        "allAngestelltersList": [
+                            {
+                                "name": "Marxer, Markus",
+                                "persnr": 1001,
+                                "abtnr": 1,
+                                "chef": null
+                            },
+                            {
+                                "name": "Widmer, Anna", ...
+        \end{lstlisting}
+
+        \begin{lstlisting}
+                    query {
+                        allAngestellters {
+                            totalCount  # Info
+                            pageInfo {  # Paginierung
+                                startCursor
+                                endCursor
+                            }
+                            nodes {
+                                name ...
+                            }
+                        }
+                    }
+                    # gibt folgendes zurueck
+                    {
+                        "data": {
+                            "allAngestellters": {
+                                "totalCount": 23,
+                                "pageInfo": {
+                                    "startCursor": "WyJwcmltYXJ5X2tleV9hc...=",
+                                    "endCursor": "WyJwcmltYXJ5X2tleV9hc2M...="
+                                },
+                            "nodes": [
+                                ...
+        \end{lstlisting}
+
+        \subsubsection{Postgraphile Mutations}
+        \begin{lstlisting}
+                    mutation MyDeleteAbteilung99 {
+                        deleteAbteilungByAbtnr(input: {abtnr: 99}) {
+                            # clientMutationId
+                            # deletedAbteilungId
+                            abteilung {
+                                abtnr
+                                name
+                            }
+                        }
+                    }
+        \end{lstlisting}
+
+        \section{Pagination}
+        \begin{itemize}
+            \item Durch Ergebnisse einer grossen Datenabfrage blättern
+            \item Vorherige Seiten überspringen mit OFFSET
+            \item OFFSET wird immer langsamer, je grösser
+            \item erfordert eindeutige Sortierreihenfolge
+            \item ist vom Client gesteuerte Eigenschaft der Verbindung
+        \end{itemize}
+
+        \subsection{Offset-Methode}
+        \begin{lstlisting}[language=sql]
+                    SELECT *
+                    FROM customers
+                    ORDER BY customerid
+                    OFFSET 100000 FETCH NEXT 25 ROWS ONLY
+                    -- einfach, verbreitet, aber skaliert nicht
+        \end{lstlisting}
+
+        \subsection{Seek-Methode}
+        \begin{lstlisting}[language=sql]
+                    -- index gegeben
+                    CREATE INDEX customers_pkey_idx ON customers (customerId);
+
+                    SELECT *
+                    FROM customers
+                    WHERE customerid > 100000
+                    ORDER BY customerid
+                    FETCH NEXT 25 ROWS ONLY
+                    -- anstelle von wert 100000 kann auch cursor treten
+                    -- effizienter als offset-methode
+        \end{lstlisting}
 
 
 
@@ -765,7 +1096,7 @@
             \subitem Aufwändige Koordination
             \subitem Star Schema und Snowflake Schema könnte man als CQRS bezeichnen
         \end{itemize}
-        \includegraphics[width=0.7\columnwidth]{graphic/11-cqrs-modell}
+        \includegraphics[width=\columnwidth]{graphic/11-cqrs-modell}
 
         \subsection{Event Sourcing}
         \enquote{Turning the database inside-out}
